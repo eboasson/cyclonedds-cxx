@@ -21,3 +21,4 @@ install(
   COMPONENT dev)
 
 add_subdirectory(helloworld)
+add_subdirectory(thousandtopics)

@@ -1,0 +1,6 @@
+#ifndef THOUSANDTOPICS_H
+#define THOUSANDTOPICS_H
+
+#define MAX_TOPICS 50
+
+#endif
