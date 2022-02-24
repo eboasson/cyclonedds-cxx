@@ -212,7 +212,7 @@ public:
      * This is allowed when all members in A also, occur in B.
      *
      * @param[in] sertype_a The first type to compare.
-     * @param[in] sertype_b The second type to compare.
+     * @param[in] type_pair_b The second type to compare.
      *
      * @return Whether this is so.
      */
