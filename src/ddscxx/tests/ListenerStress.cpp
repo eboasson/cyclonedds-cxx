@@ -216,3 +216,361 @@ TEST_F(listener_stress, DISABLED_data_available_participant)
     // Create readers
     create_readers(sub, topic, false);
 }
+
+/////////////////////////////////
+/////////////////////////////////
+
+#include <chrono>
+#include <thread>
+#include <future>
+#include <print>
+
+using namespace std::chrono_literals;
+
+//#define DEBUG std::println
+//#define INFO std::println
+#define DEBUG(...) do { } while (0)
+#define INFO(...) do { } while (0)
+#define WARN std::println
+#define ERROR std::println
+
+// Code for DataWriterListener and DataReaderListener
+template<typename T>
+class DataWriterListener : public dds::pub::NoOpDataWriterListener<T>
+{
+public:
+  DataWriterListener(std::string topicName)
+  : topicName_(std::move(topicName))
+  {
+    DEBUG("creating DataWriterListener for topic '{}'...", topicName_);
+  }
+
+  ~DataWriterListener() override { DEBUG("destroying DataWriterListener for topic '{}'...", topicName_); }
+
+  void on_publication_matched([[maybe_unused]] dds::pub::DataWriter<T>& writer,
+                              const dds::core::status::PublicationMatchedStatus& status) override
+  {
+    const bool isNegative = status.total_count_change() < 0 || status.current_count_change() < 0;
+    
+    if (isNegative) {
+      INFO("DataWriter '{}' unmatched (lost) publications.  Current count: {}, change: {}",
+                 topicName_,
+                 status.current_count(),
+                 status.current_count_change());
+    } else {
+      INFO("DataReader '{}' matched (gained) publications.  Current count: {}, change: {}",
+                 topicName_,
+                 status.current_count(),
+                 status.current_count_change());
+    }
+  }
+
+  void on_offered_incompatible_qos([[maybe_unused]] dds::pub::DataWriter<T>& writer,
+                                   const dds::core::status::OfferedIncompatibleQosStatus& status) override
+  {
+    ERROR(
+                "DataWriter '{}' offered incompatible QoS settings!  Total count: {}, change: {}, last_policy_id: {}",
+                topicName_,
+                status.total_count(),
+                status.total_count_change(),
+                status.last_policy_id());
+    
+    dds::core::policy::QosPolicyCountSeq qos_seq = status.policies();
+    if (!qos_seq.empty()) {
+      ERROR("DataWriter '{}' incompatible policy count: {}, policy_id of first incompatible QoS policy: {}",
+                  topicName_,
+                  qos_seq.size(),
+                  qos_seq[0].policy_id());
+    }
+  }
+
+  void on_offered_deadline_missed([[maybe_unused]] dds::pub::DataWriter<T>& writer,
+                                  const dds::core::status::OfferedDeadlineMissedStatus& status) override
+  {
+    WARN("DataWriter '{}' missed offered deadline!  Total count: {}, change: {}",
+               topicName_,
+               status.total_count(),
+               status.total_count_change());
+  }
+
+  void on_liveliness_lost([[maybe_unused]] dds::pub::DataWriter<T>& writer,
+                          const dds::core::status::LivelinessLostStatus& status) override
+  {
+    const bool isNegative = status.total_count_change() < 0;
+
+    if (isNegative) {
+      INFO("DataWriter '{}' lost liveliness of publications.  Count: {}, change: {}",
+                 topicName_,
+                 status.total_count(),
+                 status.total_count_change());
+    } else {
+      DEBUG("DataWriter '{}' gained liveliness of publications.  Count: {}, change: {}",
+                  topicName_,
+                  status.total_count(),
+                  status.total_count_change());
+    }
+  }
+
+private:
+  const std::string topicName_{};
+};
+
+template<typename T>
+class DataReaderListener : public dds::sub::NoOpDataReaderListener<T>
+{
+public:
+  DataReaderListener(std::string topicName)
+  : topicName_(std::move(topicName))
+  {
+    DEBUG("creating DataReaderListener for topic '{}'...", topicName_);
+  }
+
+  ~DataReaderListener() override { DEBUG("destroying DataReaderListener for topic '{}'...", topicName_); }
+
+  void on_sample_lost([[maybe_unused]] dds::sub::DataReader<T>& reader,
+                      const dds::core::status::SampleLostStatus& status) override
+  {
+    WARN("DataReader '{}' lost samples! Total count: {}, change: {}",
+               topicName_,
+               status.total_count(),
+               status.total_count_change());
+  }
+
+  void on_subscription_matched([[maybe_unused]] dds::sub::DataReader<T>& reader,
+                               const dds::core::status::SubscriptionMatchedStatus& status) override
+  {
+    const bool isNegative = status.total_count_change() < 0 || status.current_count_change() < 0;
+    
+    if (isNegative) {
+      INFO("DataReader '{}' unmatched (lost) subscriptions.  Current count: {}, change: {}",
+                 topicName_,
+                 status.current_count(),
+                 status.current_count_change());
+    } else {
+      INFO("DataReader '{}' matched (gained) subscriptions.  Current count: {}, change: {}",
+                 topicName_,
+                 status.current_count(),
+                 status.current_count_change());
+    }
+  }
+
+  void on_sample_rejected([[maybe_unused]] dds::sub::DataReader<T>& reader,
+                          const dds::core::status::SampleRejectedStatus& status) override
+  {
+    WARN("DataReader '{}' had samples rejected!  Total count: {}, change: {}",
+               topicName_,
+               status.total_count(),
+               status.total_count_change());
+  }
+
+  void on_requested_incompatible_qos([[maybe_unused]] dds::sub::DataReader<T>& reader,
+                                     const dds::core::status::RequestedIncompatibleQosStatus& status) override
+  {
+    ERROR(
+                "DataReader '{}' requested incompatible QoS settings!  Total count: {}, change: {}, last_policy_id: {}",
+                topicName_,
+                status.total_count(),
+                status.total_count_change(),
+                status.last_policy_id());
+    
+    dds::core::policy::QosPolicyCountSeq qos_seq = status.policies();
+    if (!qos_seq.empty()) {
+      ERROR("DataReader '{}' incompatible policy count: {}, policy_id of first incompatible QoS policy: {}",
+                  topicName_,
+                  qos_seq.size(),
+                  qos_seq[0].policy_id());
+    }
+  }
+
+  void on_requested_deadline_missed([[maybe_unused]] dds::sub::DataReader<T>& reader,
+                                    const dds::core::status::RequestedDeadlineMissedStatus& status) override
+  {
+    WARN("DataReader '{}' missed requested deadline!  Total count: {}, change: {}",
+               topicName_,
+               status.total_count(),
+               status.total_count_change());
+  }
+
+  void on_liveliness_changed([[maybe_unused]] dds::sub::DataReader<T>& reader,
+                             const dds::core::status::LivelinessChangedStatus& status) override
+  {
+    const bool isNegative = status.alive_count_change() < 0 || status.not_alive_count_change() > 0;
+  
+    if (isNegative) {
+      INFO("DataReader '{}' lost liveliness of some subscriptions.  Alive count: {}, change: {}; Not alive "
+                 "count: {}, change: {}",
+                 topicName_,
+                 status.alive_count(),
+                 status.alive_count_change(),
+                 status.not_alive_count(),
+                 status.not_alive_count_change());
+    } else {
+      DEBUG("DataReader '{}' gained liveliness of some subscriptions.  Alive count: {}, change: {}; Not "
+                  "alive count: {}, change: {}",
+                  topicName_,
+                  status.alive_count(),
+                  status.alive_count_change(),
+                  status.not_alive_count(),
+                  status.not_alive_count_change());
+    }
+  }
+
+  void on_data_available([[maybe_unused]] dds::sub::DataReader<T>& reader) override {}
+
+private:
+  const std::string topicName_{};
+};
+
+TEST(DDSTopicSanityTest, writeWithReadersMatched_multiNativeReaderSameThread)
+{
+  auto topicName = "ReadWriteTest";
+  using test_msg = HelloWorldData::Msg;
+  
+  dds::domain::DomainParticipant participant{0};
+  auto pub = dds::pub::Publisher{participant};
+  auto sub = dds::sub::Subscriber{participant};
+  auto topic = dds::topic::Topic<test_msg>{participant, topicName};
+  
+  dds::pub::qos::DataWriterQos writerQos{};
+  dds::sub::qos::DataReaderQos readerQos{};
+  dds::core::status::StatusMask maskAll{dds::core::status::StatusMask::all()};
+  dds::core::status::StatusMask readerMask{dds::core::status::StatusMask::none()};
+  readerMask |= dds::core::status::StatusMask::requested_deadline_missed();
+  readerMask |= dds::core::status::StatusMask::requested_incompatible_qos();
+  readerMask |= dds::core::status::StatusMask::sample_lost();
+  readerMask |= dds::core::status::StatusMask::sample_rejected();
+  readerMask |= dds::core::status::StatusMask::liveliness_changed();
+  readerMask |= dds::core::status::StatusMask::subscription_matched();
+  
+  // Writer
+  DataWriterListener<test_msg> writerListener(topicName);
+  std::optional<dds::pub::DataWriter<test_msg>> writer;
+  EXPECT_NO_THROW(writer.emplace(pub, topic, writerQos, &writerListener, maskAll));
+  
+  std::promise<void> p1;
+  auto f1 = p1.get_future();
+  std::thread t([&writer, &p1] {
+    auto timeout{1ms}; // set this timer sleep just to mimic the real test case
+    std::this_thread::sleep_for(timeout);
+    p1.set_value();
+    writer->write(test_msg{});
+  });
+  
+  f1.wait();
+  //std::this_thread::sleep_for(200ms);
+  
+  // Readers
+  std::vector<dds::sub::DataReader<test_msg>> readers{};
+  std::vector<DataReaderListener<test_msg>> listeners{};
+  for (size_t i = 0; i < 100; i++) {
+    listeners.push_back(DataReaderListener<test_msg>(topicName));
+  }
+  for (size_t i = 0; i < 100; i++) {
+    readers.emplace_back(dds::sub::DataReader<test_msg>{sub, topic, readerQos, &listeners[i], maskAll});
+  }
+  t.join();
+  
+  // destructor order can be listeners-then-readers
+  // if so, listeners can still be invoked even though the listener object have been freed already
+  // can't copy the object (because it contains state meaningful to the application)
+  // so have to destroy readers explicitly
+  //
+  // Then it turns out a on_subscription_matched can bubble up from the network stack (if multiple
+  // copies are run in parallel), increment the refcount of the underlying shared_ptr in the wrapper
+  // used to convert the C listener call into a C++ listener call just before the main thread runs
+  // the shared_ptr's destructor, leaving the listener with the sole remaining (strong) reference.
+  //
+  // When that happens, the listener will invoke the DataReader destructor, which will then hang on
+  // stopping the listeners because it waits for any currently executing listeners to complete ...
+  //
+  // Removing the listener before the destructor runs avoids that problem.
+  for (auto& rd : readers) {
+    rd.listener (nullptr, maskAll);
+  }
+  readers.clear();
+  writer->listener (nullptr, maskAll);
+}
+
+class CycloneMultiPubSub : public ::testing::Test
+{
+  using test_msg = HelloWorldData::Msg;
+  
+protected:
+  void SetUp() override
+  {
+    participant = dds::domain::DomainParticipant{0};
+    pub = dds::pub::Publisher{participant};
+    sub = dds::sub::Subscriber{participant};
+    topic = dds::topic::Topic<test_msg>{participant, topicName};
+  }
+  
+  const std::string topicName{"test_multi_pubsub_topic"};
+  const uint32_t multiEntityCnt{100};
+  
+  dds::domain::DomainParticipant participant{dds::core::null};
+  dds::topic::Topic<test_msg> topic{dds::core::null};
+  dds::pub::Publisher pub{dds::core::null};
+  dds::sub::Subscriber sub{dds::core::null};
+  dds::pub::qos::DataWriterQos writerQos{};
+  dds::sub::qos::DataReaderQos readerQos{};
+  dds::core::status::StatusMask maskAll{dds::core::status::StatusMask::all()};
+  dds::core::status::StatusMask maskNone{dds::core::status::StatusMask::none()};
+};
+
+TEST_F(CycloneMultiPubSub, MultiWriterSingleReader)
+{
+  using test_msg = HelloWorldData::Msg;
+  
+  // declare writer
+  DataWriterListener<test_msg> writerListener(topicName);
+  std::optional<dds::pub::DataWriter<test_msg>> writer;
+  EXPECT_NO_THROW(writer.emplace(pub, topic, writerQos, &writerListener, maskAll));
+  
+  // declare readers in multi threads
+  std::vector<std::thread> threads;
+  for (uint32_t i = 0; i < multiEntityCnt; ++i) {
+    threads.emplace_back(std::thread([this] {
+      DataReaderListener<test_msg> readerListener(topicName);
+      auto reader = dds::sub::DataReader<test_msg>{sub, topic, readerQos, &readerListener, maskAll};
+      reader->listener(nullptr, maskNone);
+    }));
+  }
+  
+  writer.value()->listener(nullptr, maskNone);
+  writer.reset();
+  
+  for (auto&& t : threads) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
+}
+
+TEST_F(CycloneMultiPubSub, MultiReaderSingleWriter)
+{
+  using test_msg = HelloWorldData::Msg;
+  
+  // declare reader
+  DataReaderListener<test_msg> readerListener(topicName);
+  std::optional<dds::sub::DataReader<test_msg>> reader;
+  EXPECT_NO_THROW(reader.emplace(sub, topic, readerQos, &readerListener, maskAll));
+  
+  // declare writers in multi threads
+  std::vector<std::thread> threads;
+  for (uint32_t i = 0; i < multiEntityCnt; ++i) {
+    threads.emplace_back(std::thread([this] {
+      DataWriterListener<test_msg> writerListener(topicName);
+      auto writer = dds::pub::DataWriter<test_msg>{pub, topic, writerQos, &writerListener, maskAll};
+      writer->listener(nullptr, maskNone);
+    }));
+  }
+  
+  reader.value()->listener(nullptr, maskNone);
+  reader.reset();
+  
+  for (auto&& t : threads) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
+}

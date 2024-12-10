@@ -13,7 +13,7 @@ cmake_minimum_required(VERSION 3.16)
 project(CycloneDDS-CXX VERSION 0.11.0 LANGUAGES C CXX)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 23)
 
 # By default don't treat warnings as errors, else anyone building it with a
 # different compiler that just happens to generate a warning, as well as
@@ -184,7 +184,7 @@ option(BUILD_EXAMPLES "Build examples." OFF)
 # this will add boost as a dependency
 # c++11 seems like a good tradeoff between the old and the new world
 option(ENABLE_LEGACY "Legacy c++11 compatibility." OFF)
-set(cyclonedds_cpp_std_to_use 17)
+set(cyclonedds_cpp_std_to_use ${CMAKE_CXX_STANDARD})
 if(ENABLE_LEGACY)
   set(cyclonedds_cpp_std_to_use 11)
   set(DDSCXX_USE_BOOST "1")
