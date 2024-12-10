@@ -32,13 +32,6 @@ namespace core
 {
 class OMG_DDS_API EntityDelegate;
 
-struct ListenerArg {
-    EntityDelegate *cpp_ref;
-    bool reset_on_invoke;
-
-    ListenerArg(EntityDelegate *cpp_ref_, bool reset_on_invoke_);
-};
-
 class OMG_DDS_API EntityDelegate :
     public virtual ::org::eclipse::cyclonedds::core::DDScObjectDelegate
 {
@@ -73,13 +66,8 @@ protected:
             const dds::core::status::StatusMask& mask,
             bool reset_on_invoke);
 
-    void prevent_callbacks();
-
 public:
     const dds::core::status::StatusMask get_listener_mask() const ;
-
-    bool obtain_callback_lock() ;
-    void release_callback_lock() ;
 
     // Topic callback
     virtual void on_inconsistent_topic(dds_entity_t topic,
@@ -127,16 +115,11 @@ public:
 
 protected:
     static volatile unsigned int entityID_;
-    bool enabled_;
     dds::core::status::StatusMask listener_mask;
-    long callback_count;
-    dds_listener_t *listener_callbacks;
 
 private:
     void *listener;
     ObjectDelegate::weak_ref_type myStatusCondition;
-    void *callback_mutex;
-    void *callback_cond;
 };
 
 }

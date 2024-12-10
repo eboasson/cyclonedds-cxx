@@ -584,6 +584,8 @@ AnyDataReaderDelegate::matched_publication_data(const ::dds::core::InstanceHandl
 void
 AnyDataReaderDelegate::close()
 {
+    this->listener_set(NULL, dds::core::status::StatusMask::none(), true);
+
     this->queries.all_close();
 
     org::eclipse::cyclonedds::core::EntityDelegate::close();

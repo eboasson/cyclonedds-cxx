@@ -79,7 +79,6 @@ org::eclipse::cyclonedds::domain::DomainParticipantDelegate::DomainParticipantDe
     }
 
     ddsc_qos = qos.delegate().ddsc_qos();
-    this->listener(listener, event_mask);
     ddsc_par = dds_create_participant(static_cast<dds_domainid_t>(domain_id_), ddsc_qos, org::eclipse::cyclonedds::core::make_noop_listener().get());
 
     dds_delete_qos (ddsc_qos);
@@ -91,6 +90,7 @@ org::eclipse::cyclonedds::domain::DomainParticipantDelegate::DomainParticipantDe
     this->domain_id_ = static_cast<uint32_t>(did);
 
     this->set_ddsc_entity(ddsc_par);
+    this->listener(listener, event_mask);
 
     if (config.empty()) {
         /* Try to find implicit domain by using the domain id of
@@ -143,8 +143,7 @@ org::eclipse::cyclonedds::domain::DomainParticipantDelegate::DomainParticipantDe
        * that one automatically. */
     }
 
-    this->listener(listener, event_mask);
-    ddsc_par = dds_create_participant(static_cast<dds_domainid_t>(id), ddsc_qos, this->listener_callbacks);
+    ddsc_par = dds_create_participant(static_cast<dds_domainid_t>(id), ddsc_qos, org::eclipse::cyclonedds::core::make_noop_listener().get());
 
     dds_delete_qos(ddsc_qos);
     ISOCPP_DDSC_RESULT_CHECK_AND_THROW(ddsc_par, "Could not create DomainParticipant.");
@@ -155,6 +154,7 @@ org::eclipse::cyclonedds::domain::DomainParticipantDelegate::DomainParticipantDe
     this->domain_id_ = static_cast<uint32_t>(did);
 
     this->set_ddsc_entity(ddsc_par);
+    this->listener(listener, event_mask);
 
     if (this->domain_ref_) {
       /* Add new domain to registry. */
@@ -172,8 +172,6 @@ org::eclipse::cyclonedds::domain::DomainParticipantDelegate::init(ObjectDelegate
     this->set_weak_ref(weak_ref);
     /* Add weak_ref to the map of entities */
     this->add_to_entity_map(weak_ref);
-    /* No 'factory': always enable. */
-    this->enable();
     /* Include participant in list of known participants. */
     org::eclipse::cyclonedds::domain::DomainParticipantDelegate::add_participant(*this);
 }

@@ -49,6 +49,7 @@ AnyDataWriterDelegate::~AnyDataWriterDelegate()
 void
 AnyDataWriterDelegate::close()
 {
+    this->listener_set(NULL, dds::core::status::StatusMask::none(), true);
     this->td_ = dds::topic::TopicDescription(dds::core::null);
     org::eclipse::cyclonedds::core::EntityDelegate::close();
 }

@@ -27,49 +27,19 @@
 
 #include <cassert>
 
-org::eclipse::cyclonedds::core::ListenerArg::ListenerArg(EntityDelegate *cpp_ref_, bool reset_on_invoke_) :
-    cpp_ref(cpp_ref_), reset_on_invoke(reset_on_invoke_)
-{
-}
-
 org::eclipse::cyclonedds::core::EntityDelegate::EntityDelegate() :
-  enabled_(false),
   listener_mask(0),
-  listener_callbacks(NULL),
   listener(NULL)
 {
-  this->callback_mutex = dds_alloc (sizeof (ddsrt_mutex_t));
-  this->callback_cond = dds_alloc (sizeof (ddsrt_cond_t));
-
-  ddsrt_mutex_init (static_cast<ddsrt_mutex_t*>(this->callback_mutex));
-  ddsrt_cond_init (static_cast<ddsrt_cond_t*>(this->callback_cond));
-
-  callback_count = 0;
 }
 
 org::eclipse::cyclonedds::core::EntityDelegate::~EntityDelegate()
 {
-  if (this->listener_callbacks != NULL)
-  {
-    void *arg;
-    dds_lget_data_available_arg(this->listener_callbacks, nullptr, &arg, nullptr);
-    dds_delete_listener(this->listener_callbacks);
-    delete reinterpret_cast<org::eclipse::cyclonedds::core::ListenerArg *>(arg);
-  }
-  this->listener_callbacks = NULL;
-
-  ddsrt_cond_destroy (static_cast<ddsrt_cond_t*>(this->callback_cond));
-  ddsrt_mutex_destroy (static_cast<ddsrt_mutex_t*>(this->callback_mutex));
-  dds_free (this->callback_cond);
-  dds_free (this->callback_mutex);
 }
 
 void org::eclipse::cyclonedds::core::EntityDelegate::enable()
 {
-  dds_return_t ret;
-  enabled_ = true;
-  ret = dds_set_listener (this->ddsc_entity, this->listener_callbacks);
-  ISOCPP_DDSC_RESULT_CHECK_AND_THROW(ret, "Could not set internal listener.");
+  // TODO: no point in trying to emulate "enable" when core can't do it
 }
 
 ::dds::core::status::StatusMask
@@ -156,149 +126,81 @@ org::eclipse::cyclonedds::core::EntityDelegate::listener_set(
     this->listener = _listener;
     this->listener_mask = mask;
 
-    org::eclipse::cyclonedds::core::ListenerArg *arg = new org::eclipse::cyclonedds::core::ListenerArg(this, reset_on_invoke);
-    callbacks = dds_create_listener(arg);
+    callbacks = dds_create_listener(nullptr);
 
     // Set topic callbacks
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::inconsistent_topic()))
     {
-        dds_lset_inconsistent_topic_arg(callbacks, callback_on_inconsistent_topic, arg, reset_on_invoke);
+        dds_lset_inconsistent_topic_arg(callbacks, callback_on_inconsistent_topic, static_cast<void *>(this), reset_on_invoke);
     }
 
     // Set writer callbacks
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::offered_deadline_missed()))
     {
-        dds_lset_offered_deadline_missed_arg(callbacks, callback_on_offered_deadline_missed, arg, reset_on_invoke);
+        dds_lset_offered_deadline_missed_arg(callbacks, callback_on_offered_deadline_missed, static_cast<void *>(this), reset_on_invoke);
     }
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::offered_incompatible_qos()))
     {
-        dds_lset_offered_incompatible_qos_arg(callbacks, callback_on_offered_incompatible_qos, arg, reset_on_invoke);
+        dds_lset_offered_incompatible_qos_arg(callbacks, callback_on_offered_incompatible_qos, static_cast<void *>(this), reset_on_invoke);
     }
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::liveliness_lost()))
     {
-        dds_lset_liveliness_lost_arg(callbacks, callback_on_liveliness_lost, arg, reset_on_invoke);
+        dds_lset_liveliness_lost_arg(callbacks, callback_on_liveliness_lost, static_cast<void *>(this), reset_on_invoke);
     }
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::publication_matched()))
     {
-        dds_lset_publication_matched_arg(callbacks, callback_on_publication_matched, arg, reset_on_invoke);
+        dds_lset_publication_matched_arg(callbacks, callback_on_publication_matched, static_cast<void *>(this), reset_on_invoke);
     }
 
     // Set reader callbacks
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::requested_deadline_missed()))
     {
-        dds_lset_requested_deadline_missed_arg(callbacks, callback_on_requested_deadline_missed, arg, reset_on_invoke);
+        dds_lset_requested_deadline_missed_arg(callbacks, callback_on_requested_deadline_missed, static_cast<void *>(this), reset_on_invoke);
     }
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::requested_incompatible_qos()))
     {
-        dds_lset_requested_incompatible_qos_arg(callbacks, callback_on_requested_incompatible_qos, arg, reset_on_invoke);
+        dds_lset_requested_incompatible_qos_arg(callbacks, callback_on_requested_incompatible_qos, static_cast<void *>(this), reset_on_invoke);
     }
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::sample_rejected()))
     {
-        dds_lset_sample_rejected_arg(callbacks, callback_on_sample_rejected, arg, reset_on_invoke);
+        dds_lset_sample_rejected_arg(callbacks, callback_on_sample_rejected, static_cast<void *>(this), reset_on_invoke);
     }
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::liveliness_changed()))
     {
-        dds_lset_liveliness_changed_arg(callbacks, callback_on_liveliness_changed, arg, reset_on_invoke);
+        dds_lset_liveliness_changed_arg(callbacks, callback_on_liveliness_changed, static_cast<void *>(this), reset_on_invoke);
     }
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::data_available()))
     {
-        dds_lset_data_available_arg(callbacks, callback_on_data_available, arg, reset_on_invoke);
+        dds_lset_data_available_arg(callbacks, callback_on_data_available, static_cast<void *>(this), reset_on_invoke);
     }
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::subscription_matched()))
     {
-        dds_lset_subscription_matched_arg(callbacks, callback_on_subscription_matched, arg, reset_on_invoke);
+        dds_lset_subscription_matched_arg(callbacks, callback_on_subscription_matched, static_cast<void *>(this), reset_on_invoke);
     }
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::sample_lost()))
     {
-        dds_lset_sample_lost_arg(callbacks, callback_on_sample_lost, arg, reset_on_invoke);
+        dds_lset_sample_lost_arg(callbacks, callback_on_sample_lost, static_cast<void *>(this), reset_on_invoke);
     }
 
     // Set subscriber callbacks
     if (STATUS_MASK_CONTAINS(mask, dds::core::status::StatusMask::data_on_readers()))
     {
-        dds_lset_data_on_readers_arg(callbacks, callback_on_data_readers, arg, reset_on_invoke);
+        dds_lset_data_on_readers_arg(callbacks, callback_on_data_readers, static_cast<void *>(this), reset_on_invoke);
     }
 
     // If entity enabled: set listener on ddsc entity
-    if (this->enabled_)
     {
         dds_return_t ret;
         ret = dds_set_listener(this->ddsc_entity, callbacks);
         ISOCPP_DDSC_RESULT_CHECK_AND_THROW(ret, "Setting listener failed.");
     }
-
-    // Delete previous ddsc listener callbacks object
-    if (this->listener_callbacks != NULL)
-    {
-        void *prev_arg;
-        dds_lget_data_available_arg(this->listener_callbacks, nullptr, &prev_arg, nullptr);
-        dds_delete_listener(this->listener_callbacks);
-        delete reinterpret_cast<org::eclipse::cyclonedds::core::ListenerArg *>(prev_arg);
-    }
-
-    // Store new listener
-    this->listener_callbacks = callbacks;
+  
+    dds_delete_listener(callbacks);
 }
 
 void * org::eclipse::cyclonedds::core::EntityDelegate::listener_get () const
 {
   return this->listener;
-}
-
-void org::eclipse::cyclonedds::core::EntityDelegate::prevent_callbacks ()
-{
-  ddsrt_mutex_lock (static_cast<ddsrt_mutex_t*>(this->callback_mutex));
-
-  if (this->get_weak_ref().expired () && (this->callback_count == 1))
-  {
-    // This condition leads to deadlock: the thread is a callback
-    // thread, it has held the last reference to this object, the
-    // reference has gone out of scope, so the destructor is
-    // running, it has called close(), which is trying to prevent
-    // further callbacks, so ends up here with the thread trying to
-    // wait for itself.
-    //
-    // If the main thread calls close() explicitly, then this
-    // situation is avoided.
-    //
-    assert (false);
-  }
-
-  while (callback_count > 0)
-  {
-    ddsrt_cond_wait (static_cast<ddsrt_cond_t*>(this->callback_cond), static_cast<ddsrt_mutex_t*>(this->callback_mutex));
-  }
-  callback_count = -1;
-
-  ddsrt_mutex_unlock (static_cast<ddsrt_mutex_t*>(this->callback_mutex));
-}
-
-bool org::eclipse::cyclonedds::core::EntityDelegate::obtain_callback_lock ()
-{
-  bool result = false;
-
-  ddsrt_mutex_lock (static_cast<ddsrt_mutex_t*>(this->callback_mutex));
-  if (callback_count >= 0)
-  {
-    result = true;
-    ++callback_count;
-  }
-  ddsrt_mutex_unlock (static_cast<ddsrt_mutex_t*>(this->callback_mutex));
-
-  return result;
-}
-
-void org::eclipse::cyclonedds::core::EntityDelegate::release_callback_lock ()
-{
-    ddsrt_mutex_lock (static_cast<ddsrt_mutex_t*>(this->callback_mutex));
-
-  --callback_count;
-  if (callback_count == 0)
-  {
-    ddsrt_cond_broadcast (static_cast<ddsrt_cond_t*>(this->callback_cond));
-  }
-
-  ddsrt_mutex_unlock (static_cast<ddsrt_mutex_t*>(this->callback_mutex));
 }
 
 const dds::core::status::StatusMask

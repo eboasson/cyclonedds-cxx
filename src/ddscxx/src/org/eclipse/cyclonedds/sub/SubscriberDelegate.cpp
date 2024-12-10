@@ -55,12 +55,12 @@ SubscriberDelegate::SubscriberDelegate(
         ISOCPP_THROW_EXCEPTION(ISOCPP_ERROR, "Could not convert subscriber QoS.");
     }
 
-    this->listener(listener, event_mask);
     ddsc_sub = dds_create_subscriber(ddsc_par, ddsc_qos, org::eclipse::cyclonedds::core::make_noop_listener().get());
 
     dds_delete_qos(ddsc_qos);
     ISOCPP_DDSC_RESULT_CHECK_AND_THROW(ddsc_sub, "Could not create subscriber.");
     this->set_ddsc_entity(ddsc_sub);
+    this->listener(listener, event_mask);
 }
 
 SubscriberDelegate::~SubscriberDelegate()
@@ -83,11 +83,6 @@ SubscriberDelegate::init(ObjectDelegate::weak_ref_type weak_ref)
     this->add_to_entity_map(weak_ref);
     /* Register Publisher at Participant. */
     this->dp_.delegate()->add_subscriber(*this);
-
-    /* Enable when needed. */
-    if (this->dp_.delegate()->is_auto_enable()) {
-        this->enable();
-    }
 }
 
 void

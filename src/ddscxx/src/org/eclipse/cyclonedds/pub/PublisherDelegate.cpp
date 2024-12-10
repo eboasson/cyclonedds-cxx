@@ -56,11 +56,11 @@ PublisherDelegate::PublisherDelegate(const dds::domain::DomainParticipant& dp,
         ISOCPP_THROW_EXCEPTION(ISOCPP_ERROR, "Could not convert publisher QoS.");
     }
 
-    this->listener(listener, event_mask);
     ddsc_pub = dds_create_publisher(ddsc_par, ddsc_qos, org::eclipse::cyclonedds::core::make_noop_listener().get());
     dds_delete_qos(ddsc_qos);
     ISOCPP_DDSC_RESULT_CHECK_AND_THROW(ddsc_pub, "Could not create publisher.");
     this->set_ddsc_entity(ddsc_pub);
+    this->listener(listener, event_mask);
 }
 
 PublisherDelegate::~PublisherDelegate()
@@ -83,11 +83,6 @@ PublisherDelegate::init(ObjectDelegate::weak_ref_type weak_ref)
     this->add_to_entity_map(weak_ref);
     /* Register Publisher at Participant. */
     this->dp_.delegate()->add_publisher(*this);
-
-    /* Enable when needed. */
-    if (this->dp_.delegate()->is_auto_enable()) {
-        this->enable();
-    }
 }
 
 void
