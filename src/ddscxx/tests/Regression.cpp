@@ -13,6 +13,7 @@
 DDSRT_WARNING_GNUC_OFF(maybe-uninitialized)
 
 #include "dds/dds.hpp"
+#include "Util.hpp"
 #include <gtest/gtest.h>
 #include "RegressionModels.hpp"
 #include "RegressionModels_pragma.hpp"

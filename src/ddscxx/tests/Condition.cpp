@@ -11,6 +11,7 @@
 #include <gtest/gtest.h>
 
 #include "dds/dds.hpp"
+#include "Util.hpp"
 #include "Space.hpp"
 
 /* Class to test implicit conversion from any Condition to Condition and vice versa. */

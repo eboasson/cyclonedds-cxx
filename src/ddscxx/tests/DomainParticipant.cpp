@@ -12,6 +12,7 @@
 #include <gtest/gtest.h>
 #include "dds/ddsrt/environ.h"
 //#include "dds/version.h"
+#include "Util.hpp"
 #include "HelloWorldData.hpp"
 #include "Space.hpp"
 

@@ -11,6 +11,7 @@
 #include <gtest/gtest.h>
 
 #include "dds/dds.hpp"
+#include "Util.hpp"
 #include "Space.hpp"
 
 /*

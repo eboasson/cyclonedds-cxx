@@ -16,6 +16,7 @@
 #include "dds/ddsrt/threads.h"
 
 #include <gtest/gtest.h>
+#include "Util.hpp"
 #include "HelloWorldData.hpp"
 
 #define MAX_WRITERS 20

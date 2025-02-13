@@ -9,6 +9,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 
 #include "dds/dds.hpp"
+#include "Util.hpp"
 #include <gtest/gtest.h>
 
 using namespace dds::pub::qos;

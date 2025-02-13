@@ -10,6 +10,7 @@
 
 #include "dds/dds.hpp"
 #include <gtest/gtest.h>
+#include "Util.hpp"
 #include "HelloWorldData.hpp"
 #include "Space.hpp"
 

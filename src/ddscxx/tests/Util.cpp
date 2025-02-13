@@ -8,11 +8,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
 
-#include "dds/dds.h"
+#include "dds/dds.hpp"
+#include "Util.hpp"
+
 #include "dds/ddsrt/atomics.h"
 #include "dds/ddsrt/process.h"
 #include "dds/ddsrt/threads.h"
-#include "Util.hpp"
 
 char *create_unique_topic_name (const char *prefix, char *name, size_t size)
 {

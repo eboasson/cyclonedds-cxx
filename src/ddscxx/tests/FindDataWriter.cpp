@@ -12,6 +12,7 @@
 #include <gtest/gtest.h>
 
 #include "dds/dds.hpp"
+#include "Util.hpp"
 #include "Space.hpp"
 
 #define TOPIC1_NAME    "findwriter_Type1"

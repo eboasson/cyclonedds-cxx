@@ -11,8 +11,8 @@
 #include <gtest/gtest.h>
 #include <string>
 
-#include "Util.hpp"
 #include "dds/dds.hpp"
+#include "Util.hpp"
 #include "Serialization.hpp"
 
 /**
