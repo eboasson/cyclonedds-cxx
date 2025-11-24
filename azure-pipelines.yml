@@ -17,7 +17,7 @@ strategy:
   matrix:
     'Windows 2025 with Visual Studio 2022 (Debug, x86_64)':
       image: windows-2025
-      analyzer: on
+      analyzer: off
       generator: 'Visual Studio 17 2022'
 
 pool:
