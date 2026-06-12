@@ -128,6 +128,8 @@ pool:
   vmImage: $(image)
 
 variables:
+  cyclonedds_repository: https://github.com/eboasson/cyclonedds.git
+  cyclonedds_branch: enums-and-unions-and-more
   cyclonedds_uri: '<CycloneDDS><Domain><Internal><EnableExpensiveChecks>rhc,whc</EnableExpensiveChecks><LivelinessMonitoring>true</LivelinessMonitoring></Internal><Tracing><Verbosity>config</Verbosity><OutputFile>stderr</OutputFile></Tracing></Domain></CycloneDDS>'
 
 steps:
