@@ -1549,11 +1549,11 @@ process_enum(
   struct generator *gen = str->generator;
   const idl_enum_t *_enum = (const idl_enum_t *)node;
   const idl_enumerator_t *enumerator;
-  uint32_t value;
+  int32_t value;
   const char *enum_name = NULL;
   idl_retcode_t ret = IDL_RETCODE_OK;
-  uint32_t *already_encountered = NULL,
-           n = 0;
+  int32_t *already_encountered = NULL;
+  uint32_t n = 0;
 
   (void)pstate;
   (void)revisit;
@@ -1597,7 +1597,7 @@ process_enum(
 
     already_encountered[n++] = value;
 
-    if (putf(&str->props, "    %scase %"PRIu32":\n"
+    if (putf(&str->props, "    %scase %"PRId32":\n"
                           "    return %s::%s;\n"
                           "    break;\n",
                           enumerator == _enum->default_enumerator ? "default:\n    " : "",
