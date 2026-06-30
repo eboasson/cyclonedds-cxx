@@ -7,7 +7,7 @@
 // http://www.eclipse.org/org/documents/edl-v10.php.
 //
 // SPDX-License-Identifier: EPL-2.0 OR BSD-3-Clause
- 
+
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -345,7 +345,7 @@ emit_struct(
     fmt = "%2$s static_cast<const %1$s&>(*this) == static_cast<const %1$s&>(_other)";
     if (idl_fprintf(gen->header.handle, fmt, base, _struct->members ? " &&\n      " : "") < 0)
       return IDL_RETCODE_NO_MEMORY;
-    
+
     // ostream cpp
     fmt = "  os << \"%2$s%1$s: \" << static_cast<const %1$s&>(rhs);\n";
     if (idl_fprintf(gen->impl.handle, fmt, base, _struct->members ? ", " : "") < 0)
@@ -392,7 +392,7 @@ emit_enum(
   struct generator *gen = user_data;
   const idl_enum_t *_enum = (const idl_enum_t *)node;
   const idl_enumerator_t *enumerator;
-  uint32_t skip = 0, value;
+  int32_t skip = 0, value;
   const char *name, *fmt, *sep = "  ";
 
   (void)pstate;
@@ -416,7 +416,7 @@ emit_enum(
   IDL_FOREACH(enumerator, _enum->enumerators) {
     const char *symname = get_cpp11_name(enumerator);
     value = enumerator->value.value;
-    fmt = (value == skip) ? "%s%s" : "%s%s = %" PRIu32 "\n";
+    fmt = (value == skip) ? "%s%s" : "%s%s = %" PRId32 "\n";
     if (idl_fprintf(gen->header.handle, fmt, sep, symname, value) < 0)
       return IDL_RETCODE_NO_MEMORY;
 
@@ -426,7 +426,7 @@ emit_enum(
     if (idl_fprintf(gen->impl.handle, fmt, symname, name, fqname) < 0)
       return IDL_RETCODE_NO_MEMORY;
 
-    skip = value + 1;
+    skip = (value < INT32_MAX) ? value + 1 : INT32_MIN;
     sep = ",\n  ";
   }
 
@@ -509,7 +509,7 @@ emit_module(
   if (revisit) {
     if (idl_fprintf(gen->header.handle, "} //namespace %s\n\n", name) < 0)
       return IDL_RETCODE_NO_MEMORY;
-    
+
     // ostream cpp
     if (idl_fprintf(gen->impl.handle, "} //namespace %s\n\n", name) < 0)
       return IDL_RETCODE_NO_MEMORY;
